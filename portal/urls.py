@@ -4,6 +4,7 @@ from . import gateway, views
 
 app_name = "portal"
 urlpatterns = [
+    path("health/", views.health, name="health"),
     path("_internal/dify-auth", gateway.authorize_nginx, name="dify-auth"),
     path("", views.bot_list, name="bot-list"),
     path("bots/<uuid:bot_id>/", views.bot_detail, name="bot-detail"),

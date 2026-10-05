@@ -219,6 +219,7 @@ __marimo__/
 
 # Portal local secrets, persistent data and generated static files
 .secret-key
+.portal-auth-secret
 data/
 backups/
 staticfiles/

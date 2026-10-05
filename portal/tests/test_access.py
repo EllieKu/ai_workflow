@@ -29,6 +29,11 @@ class PortalAccessTests(TestCase):
     def detail_url(self, bot):
         return reverse("portal:bot-detail", args=[bot.pk])
 
+    def test_health_check_does_not_require_login(self):
+        response = self.client.get(reverse("portal:health"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"ok")
+
     def test_anonymous_cannot_view_list_or_detail(self):
         for url in [reverse("portal:bot-list"), self.detail_url(self.bot_a)]:
             with self.subTest(url=url):

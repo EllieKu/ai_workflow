@@ -73,3 +73,7 @@ export DJANGO_DEBUG=true
 ```
 
 `config.test_settings` 只供測試，使用固定測試金鑰與快速密碼雜湊，禁止用它啟動服務。驗收範圍與已執行的測試結果統一記錄於 [PLAN.md](../PLAN.md)。
+
+## Dify Web App 整合測試
+
+本機整合測試沿用 Dify Compose現有 Nginx，Portal container只執行 Django／Gunicorn。完整服務的啟動、檢查與回滾方式見[整合測試操作文件](../tools/portal-nginx-test.md)。候選設定尚未完成瀏覽器驗收，不能當作正式部署設定。
