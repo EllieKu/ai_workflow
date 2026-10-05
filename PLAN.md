@@ -1,6 +1,6 @@
 # PLAN.md — Dify Portal 實作計畫
 
-狀態：實作中。2026-10-05 已選定沿用 Dify Compose 現有 `nginx` service，搭配 Django `auth_request` 授權端點；不新增外層或 Portal Nginx。已新增候選設定與授權測試，Portal 共 54 個測試通過，migration 一致性檢查無差異。設定尚未套用至運行環境；完整瀏覽器、防繞過與檔案隔離驗收尚未完成，不能視為正式整合。
+狀態：實作中。2026-10-05 已選定並在本機套用 Dify Compose 現有 `nginx` service＋Django `auth_request` 候選整合；不新增外層或 Portal Nginx。Portal 共 55 個測試通過，migration 一致性檢查無差異。首次瀏覽器進入聊天發現內部授權請求 Host傳遞錯誤，已修正並重載原有 Nginx；登入後聊天、完整防繞過與檔案隔離仍待驗收，不能視為正式整合。
 
 本文件記錄需求、實作方案與進度；開發必須遵守 `AGENTS.md`。下列「建議」及「待確認」是待技術驗證的方案，不代表使用者已指定所有實作細節。
 
@@ -138,7 +138,7 @@
 
 ### 階段 3：部署與驗收
 
-目前尚未提供 Portal 容器的 Compose 或完整正式部署設定；`tools/` 的候選 Compose override 只調整 Dify 原有 `nginx` service，不會建立另一個 Nginx。若日後建立 Portal container，該 container 只執行 Django／Gunicorn並掛載 SQLite資料目錄，不包含 Nginx，也不另啟動資料庫 container。Gunicorn與 WhiteNoise已列入依賴，正式設定仍待整合驗證。
+已提供並套用本機整合測試用 Portal image與 Compose候選設定；override沿用 Dify原有 `nginx` service，並建立只執行 Django／Gunicorn的 `portal` service，掛載 SQLite資料目錄，不包含第二個 Nginx，也不另啟動資料庫 container。這仍是候選測試設定，尚未完成正式部署驗收。
 
 - [ ] 固定官方 image；有 Dify 原始碼修改時才重建相應 image。完成 Portal image、Compose、反向代理與環境變數範例。
 - [ ] 完成登入嘗試限制、受信任代理／HTTPS 設定與完整依賴鎖定，將靜態檔案收集納入正式部署流程；既有本機 `collectstatic` 紀錄不代表部署流程已完成。
@@ -169,10 +169,10 @@
 | Dify 基準版本／commit | 已盤點 checkout `4c640ff898ccfd48e0796276c999885ef1b5fdb8`；正式客製基準仍待選定與驗證 |
 | Portal 資料庫 | 已確認第一版使用 SQLite；持久化、備份還原及並行驗證待實作，測試規模待確認 |
 | 修改檔案與端點 | Portal 基礎路由及候選 `/chat/<code>`、`/api/<path>`、`/_next/static/<asset>`；另有 `gateway.py`、migration `0002` 與代理測試；本次未修改程式 |
-| Session 與撤權方案 | 已實作 Nginx 內部授權端點候選：以 passport 摘要綁定登入 Session／授權／身分，每次請求重查授權；候選 Nginx 設定尚未部署 |
+| Session 與撤權方案 | 已在本機套用 Nginx內部授權端點候選：以 passport摘要綁定登入 Session／授權／身分，每次請求重查授權；完整瀏覽器驗收尚未完成 |
 | Dify 日誌 | 維持原生顯示；已取消 Portal 帳號／user_id 辨識需求 |
-| 已完成檢查與測試 | 2026-10-05：54 個測試通過，測試系統檢查及 migration 一致性檢查無問題；Compose 合併設定與 Nginx 語法檢查通過；尚未執行瀏覽器整合驗收 |
-| 部署、備份與回滾命令 | 待實作 |
+| 已完成檢查與測試 | 2026-10-05：55 個測試通過，測試系統檢查及 migration 一致性檢查無問題；Compose 合併設定與運行中 Nginx 語法檢查通過；統一啟動後 Portal healthcheck為 healthy，首頁回應 302導向登入頁且登入頁回應 200；完整瀏覽器整合驗收尚未完成 |
+| 部署、備份與回滾命令 | 已新增並套用本機候選操作工具與 SQLite online backup；回滾尚未實際驗證 |
 
 已建立 [Dify 本機建置 override](tools/dify-compose.build.yaml) 與 [操作說明](tools/dify-build.md)：以現有 commit 作為候選基準，API／worker／worker_beat／api_websocket 共用客製 API image，Web 使用客製 Web image；其他輔助服務維持官方 image，相容性仍待驗證。Compose `config --quiet` 已通過；尚未切換分支、執行 build 或啟動服務，不能視為已驗收版本。
 
@@ -202,8 +202,12 @@
 
 - 使用者已選定沿用 Dify Compose 現有 `nginx` service；不新增外層、第二個或 Portal Nginx。新增 `/_internal/dify-auth`，只接受共享伺服器秘密，並檢查 Django Session、帳號／Bot 狀態、BotGrant、允許路由、同源寫入、passport 摘要、Portal Session、App 與到期時間；授權失敗時關閉存取。
 - 新增 `tools/portal-nginx/default.conf.template` 與 `tools/dify-compose.portal-nginx.yaml`，以 Compose override 將模板掛載至 Dify 原有 `nginx` service，不直接修改產生的 `default.conf`，也不建立新的 Nginx image／service。該 Nginx的公開 listener執行授權；同一 service的原生 listener作為 Portal上游，主機發布僅綁定 `127.0.0.1:8081`。
+- 候選 override另建立只含 Django／Gunicorn的 `portal` service，透過 Docker內網供 Dify原有 Nginx存取；新增 `tools/portal-nginx-test.sh` 與操作文件，提供秘密產生、SQLite online backup、完整服務啟動、狀態查看及回復原 Nginx的明確命令。啟動命令合併 Dify原始 Compose與 Portal override，讓原有 Nginx從建立時即掛載授權設定；Portal healthcheck會讓 Nginx等待 Gunicorn可用。候選服務已在本機套用。
+- 已成功建置本機 `docker-portal:latest` 候選 image，並以 container執行 `python manage.py check`，結果無問題。候選 Compose為本機 HTTP測試暫時設定 `DJANGO_DEBUG=true`，正式環境必須改用 HTTPS並關閉 DEBUG。
+- 已在本機啟動 Portal container並重新建立 Dify原有 Nginx。首次登入 Portal後開啟 `/chat/<code>` 回傳 500；日誌確認 Nginx內部 `auth_request` 使用 `Host: portal:8000`，被 Django `ALLOWED_HOSTS` 以 400拒絕。模板已改為保留原始 `$http_host`；修正後未登入聊天入口正確回傳 401，且不再產生新的 `DisallowedHost`。登入後已能開啟原生 Web App，相關 API回應 200；實際提問、SSE回答與完整隔離驗收仍待確認。
+- Portal image重建會改變 container IP；既有 Nginx曾因保留舊 upstream位址回傳 502。Nginx模板已改用內建 Docker DNS動態解析 Portal upstream，不再依賴每次重建 Nginx來更新位址；修復後首頁回應 302導向登入頁，登入頁回應 200。
 - `/api/passport`、`/api/login/status` 及暫時的文字聊天 relay 仍送至 Django；其他已審查 API 在 `auth_request` 通過後由 Nginx 直送 Dify。檔案、停止生成、Service API、MCP 與其他未審查發布面在公開 listener 拒絕。
-- 新增 6 個 Nginx 授權端點測試，總計 54 個 Portal 測試通過；`check`、migration dry-run、Compose `config --quiet` 及暫存 container 的 `nginx -t` 通過。候選設定尚未啟動，真實 Cookie／Header、SSE、跨使用者／Bot 與直連封鎖仍待整合驗收。
+- 新增 6 個 Nginx 授權端點測試及 Portal healthcheck測試，總計 55 個 Portal 測試通過；`check`、migration dry-run、Compose `config --quiet` 及運行中 container 的 `nginx -t` 通過。候選設定已用合併後的統一啟動流程在本機啟動，Portal狀態為 healthy；真實 SSE、跨使用者／Bot 與直連封鎖仍待整合驗收。
 
 ### 先前 Portal 基礎驗證紀錄（本次未重跑）
 

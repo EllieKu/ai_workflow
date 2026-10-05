@@ -74,8 +74,12 @@ Portal 為獨立專案，負責登入、Bot 授權與可用機器人列表。使
 
 ```text
 tools/
-└── sync-upstream.sh
+├── sync-upstream.sh
+├── portal-nginx-test.sh
+└── portal-nginx-test.md
 ```
+
+Portal接入 Dify原有 Nginx的本機整合測試與回滾方式見 [Portal／Dify整合測試](tools/portal-nginx-test.md)。
 
 ## Dify Upstream 同步
 

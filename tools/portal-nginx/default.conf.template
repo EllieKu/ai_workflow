@@ -6,12 +6,14 @@ server {
     listen ${NGINX_PORT};
     server_name ${NGINX_SERVER_NAME};
     resolver 127.0.0.11 valid=30s ipv6=off;
+    set $portal_upstream ${PORTAL_UPSTREAM};
 
     location = /_portal_auth {
         internal;
-        proxy_pass http://${PORTAL_UPSTREAM}/_internal/dify-auth;
+        proxy_pass http://$portal_upstream/_internal/dify-auth;
         proxy_pass_request_body off;
         proxy_set_header Content-Length "";
+        proxy_set_header Host $http_host;
         proxy_set_header Cookie $http_cookie;
         proxy_set_header X-Portal-Auth-Secret ${DIFY_AUTH_REQUEST_SECRET};
         proxy_set_header X-Original-URI $request_uri;
@@ -24,12 +26,12 @@ server {
     }
 
     # Portal pages share the public origin with the native Dify Web App.
-    location = / { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
-    location /login/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
-    location /logout/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
-    location /bots/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
-    location /admin/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
-    location /static/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
+    location = / { proxy_pass http://$portal_upstream; include proxy.conf; }
+    location /login/ { proxy_pass http://$portal_upstream; include proxy.conf; }
+    location /logout/ { proxy_pass http://$portal_upstream; include proxy.conf; }
+    location /bots/ { proxy_pass http://$portal_upstream; include proxy.conf; }
+    location /admin/ { proxy_pass http://$portal_upstream; include proxy.conf; }
+    location /static/ { proxy_pass http://$portal_upstream; include proxy.conf; }
 
     location ~ "^/chat/[A-Za-z0-9_-]{1,128}/?$" {
         auth_request /_portal_auth;
@@ -41,11 +43,11 @@ server {
     # Passport and login status are small authorization responses that Django
     # must create/check. Browser-supplied user_id is never sent to Dify.
     location = /api/passport {
-        proxy_pass http://${PORTAL_UPSTREAM};
+        proxy_pass http://$portal_upstream;
         include proxy.conf;
     }
     location = /api/login/status {
-        proxy_pass http://${PORTAL_UPSTREAM};
+        proxy_pass http://$portal_upstream;
         include proxy.conf;
     }
 
@@ -53,7 +55,7 @@ server {
     # Keep text-only chat body filtering and its SSE relay in Django until file
     # references are proven owner-bound in the running Dify version.
     location = /api/chat-messages {
-        proxy_pass http://${PORTAL_UPSTREAM};
+        proxy_pass http://$portal_upstream;
         include proxy.conf;
     }
 
