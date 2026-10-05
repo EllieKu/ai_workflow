@@ -1,0 +1,7 @@
+# Candidate LOCAL DEVELOPMENT configuration; not deployed automatically.
+# Keep the FIRST Compose file at dify/docker/docker-compose.yaml.
+# Dify Console remains reachable by server administrators on loopback only.
+services:
+  nginx:
+    ports: !override
+      - "127.0.0.1:8081:80"

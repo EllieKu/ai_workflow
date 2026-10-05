@@ -1,0 +1,32 @@
+# Use docker/docker-compose.yaml as the FIRST Compose file.
+# Relative build contexts are resolved against that file's directory.
+services:
+  api:
+    image: local/dify-api:${DIFY_BUILD_TAG:?Set DIFY_BUILD_TAG to a unique build tag}
+    pull_policy: never
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+      args:
+        COMMIT_SHA: ${DIFY_BUILD_COMMIT:?Set DIFY_BUILD_COMMIT to the source commit}
+
+  worker:
+    image: local/dify-api:${DIFY_BUILD_TAG:?Set DIFY_BUILD_TAG to a unique build tag}
+    pull_policy: never
+
+  worker_beat:
+    image: local/dify-api:${DIFY_BUILD_TAG:?Set DIFY_BUILD_TAG to a unique build tag}
+    pull_policy: never
+
+  api_websocket:
+    image: local/dify-api:${DIFY_BUILD_TAG:?Set DIFY_BUILD_TAG to a unique build tag}
+    pull_policy: never
+
+  web:
+    image: local/dify-web:${DIFY_BUILD_TAG:?Set DIFY_BUILD_TAG to a unique build tag}
+    pull_policy: never
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+      args:
+        COMMIT_SHA: ${DIFY_BUILD_COMMIT:?Set DIFY_BUILD_COMMIT to the source commit}

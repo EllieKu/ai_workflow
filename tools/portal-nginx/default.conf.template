@@ -1,0 +1,135 @@
+# Version-controlled candidate for the single Dify Nginx deployment.
+# Public traffic uses the first server. The second listener is published only
+# on host loopback so Portal can obtain native passports without a proxy loop.
+
+server {
+    listen ${NGINX_PORT};
+    server_name ${NGINX_SERVER_NAME};
+    resolver 127.0.0.11 valid=30s ipv6=off;
+
+    location = /_portal_auth {
+        internal;
+        proxy_pass http://${PORTAL_UPSTREAM}/_internal/dify-auth;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header X-Portal-Auth-Secret ${DIFY_AUTH_REQUEST_SECRET};
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_set_header X-Original-Method $request_method;
+        proxy_set_header X-Original-Origin $http_origin;
+        proxy_set_header X-Original-Scheme $scheme;
+        proxy_set_header X-Original-Host $http_host;
+        proxy_set_header X-Original-App-Code $http_x_app_code;
+        proxy_set_header X-Original-App-Passport $http_x_app_passport;
+    }
+
+    # Portal pages share the public origin with the native Dify Web App.
+    location = / { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
+    location /login/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
+    location /logout/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
+    location /bots/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
+    location /admin/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
+    location /static/ { proxy_pass http://${PORTAL_UPSTREAM}; include proxy.conf; }
+
+    location ~ "^/chat/[A-Za-z0-9_-]{1,128}/?$" {
+        auth_request /_portal_auth;
+        set $web_upstream web:3000;
+        proxy_pass http://$web_upstream;
+        include proxy.conf;
+    }
+
+    # Passport and login status are small authorization responses that Django
+    # must create/check. Browser-supplied user_id is never sent to Dify.
+    location = /api/passport {
+        proxy_pass http://${PORTAL_UPSTREAM};
+        include proxy.conf;
+    }
+    location = /api/login/status {
+        proxy_pass http://${PORTAL_UPSTREAM};
+        include proxy.conf;
+    }
+
+    # Transitional safety boundary: auth_request cannot inspect a JSON body.
+    # Keep text-only chat body filtering and its SSE relay in Django until file
+    # references are proven owner-bound in the running Dify version.
+    location = /api/chat-messages {
+        proxy_pass http://${PORTAL_UPSTREAM};
+        include proxy.conf;
+    }
+
+    location /api {
+        auth_request /_portal_auth;
+        set $api_upstream api:5001;
+        proxy_pass http://$api_upstream;
+        include proxy.conf;
+    }
+
+    location /console/api {
+        set $api_upstream api:5001;
+        proxy_pass http://$api_upstream;
+        include proxy.conf;
+    }
+    location /socket.io/ {
+        set $socket_io_upstream ${NGINX_SOCKET_IO_UPSTREAM};
+        proxy_pass http://$socket_io_upstream;
+        include proxy.conf;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+    }
+    location /_next/static/ {
+        set $web_upstream web:3000;
+        proxy_pass http://$web_upstream;
+        include proxy.conf;
+    }
+
+    # These publishing surfaces are outside the Portal Web App contract.
+    location ~ ^/(?:v1|openapi|files|explore|mcp|triggers)(?:/|$) { return 404; }
+
+    # Preserve Dify Console page routing. Its API remains under /console/api.
+    location / {
+        set $web_upstream web:3000;
+        proxy_pass http://$web_upstream;
+        include proxy.conf;
+    }
+
+    location /e/ {
+        set $plugin_daemon_upstream plugin_daemon:5002;
+        proxy_pass http://$plugin_daemon_upstream;
+        proxy_set_header Dify-Hook-Url $scheme://$host$request_uri;
+        include proxy.conf;
+    }
+
+    ${ACME_CHALLENGE_LOCATION}
+    ${HTTPS_CONFIG}
+}
+
+# Native Dify upstream for Portal. Compose publishes this listener on
+# 127.0.0.1 only; it must never be exposed on an external interface.
+server {
+    listen 8081;
+    server_name _;
+    resolver 127.0.0.11 valid=30s ipv6=off;
+
+    location /console/api { set $api_upstream api:5001; proxy_pass http://$api_upstream; include proxy.conf; }
+    location /api { set $api_upstream api:5001; proxy_pass http://$api_upstream; include proxy.conf; }
+    location /v1 { set $api_upstream api:5001; proxy_pass http://$api_upstream; include proxy.conf; }
+    location /openapi { set $api_upstream api:5001; proxy_pass http://$api_upstream; include proxy.conf; }
+    location /files { set $api_upstream api:5001; proxy_pass http://$api_upstream; include proxy.conf; }
+    location /mcp { set $api_upstream api:5001; proxy_pass http://$api_upstream; include proxy.conf; }
+    location /triggers { set $api_upstream api:5001; proxy_pass http://$api_upstream; include proxy.conf; }
+    location /socket.io/ {
+        set $socket_io_upstream ${NGINX_SOCKET_IO_UPSTREAM};
+        proxy_pass http://$socket_io_upstream;
+        include proxy.conf;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    location /e/ {
+        set $plugin_daemon_upstream plugin_daemon:5002;
+        proxy_pass http://$plugin_daemon_upstream;
+        proxy_set_header Dify-Hook-Url $scheme://$host$request_uri;
+        include proxy.conf;
+    }
+    location / { set $web_upstream web:3000; proxy_pass http://$web_upstream; include proxy.conf; }
+}
