@@ -1,0 +1,13 @@
+{% extends 'portal/base.html' %}
+{% block title %}{{ bot.name }} · AI Portal{% endblock %}
+{% block content %}
+<a href="{% url 'portal:bot-list' %}">返回機器人列表</a>
+<h1>{{ bot.name }}</h1>
+<p>{{ bot.description|linebreaksbr }}</p>
+{% if chat_enabled %}
+<p><a href="{% url 'portal:chat' bot.web_app_code %}">開始文字聊天</a></p>
+<p>目前提供文字聊天；檔案與其他功能尚未開放。</p>
+{% else %}
+<p>聊天入口尚未開放，開放後即可從這裡開始對話。</p>
+{% endif %}
+{% endblock %}

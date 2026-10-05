@@ -1,0 +1,16 @@
+{% extends 'portal/base.html' %}
+{% block content %}
+<h1>我的機器人</h1>
+<p>以下為您已獲授權使用的機器人。</p>
+<div class="bots">
+  {% for bot in bots %}
+  <article>
+    <h2><a href="{% url 'portal:bot-detail' bot.id %}">{{ bot.name }}</a></h2>
+    <p>{{ bot.description|linebreaksbr }}</p>
+    <p class="muted">{% if chat_enabled %}可開啟文字聊天{% else %}聊天入口尚未開放{% endif %}</p>
+  </article>
+  {% empty %}
+  <p>目前沒有可使用的機器人，請聯絡管理者申請權限。</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Portal local secrets, persistent data and generated static files
+.secret-key
+data/
+backups/
+staticfiles/
+*.sqlite3
+*.sqlite3-*
