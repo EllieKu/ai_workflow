@@ -36,7 +36,7 @@
 | `README.md` | 專案入口、文件導覽與常用操作 |
 | `dify/` | 官方 Dify |
 | `dify-portal/` | Django 登入、Bot 管理、授權與 Dify 存取閥門 |
-| `tools/` | Portal／Dify Compose override、Nginx 模板與整合測試操作工具 |
+| `tools/` | Portal／Dify Compose override、Portal 熱更新開發設定、Nginx 模板與整合測試操作工具 |
 
 Portal SQLite 保存 Portal 帳號、Bot、BotGrant、Django Session、DifyIdentity 與 DifyPassport 摘要。聊天內容、對話及 Dify 原生日誌由 Dify 保存。
 
@@ -128,11 +128,12 @@ Portal 不自行簽發額外交接 Token，也不接受瀏覽器自行登記 pas
 ```bash
 ./tools/portal-nginx-test.sh check
 ./tools/portal-nginx-test.sh start
+./tools/portal-nginx-test.sh dev-start
 ./tools/portal-nginx-test.sh stop
 ./tools/portal-nginx-test.sh status
 ./tools/portal-nginx-test.sh logs
 ```
 
-`start` 會先使用 SQLite online backup 備份 Portal 資料庫，再合併 Dify 原始 Compose 與 Portal override 啟動目前 profile 的服務。`stop` 會停止相同設定中的 container，但不刪除資料或 volumes。完整前置條件、影響範圍、Nginx 重載與回復方式見 `tools/portal-nginx-test.md`。
+`start` 會先使用 SQLite online backup 備份 Portal 資料庫，再合併 Dify 原始 Compose 與 Portal override 啟動目前 profile 的服務。`dev-start` 會額外掛載本機 Portal 原始碼並改用 Django 開發伺服器，以支援自動重載。`stop` 會停止相同 Compose project 的 container，但不刪除資料或 volumes。完整前置條件、影響範圍、Nginx 重載與回復方式見 `tools/portal-nginx-test.md`。
 
 目前 Compose override 為配合 `http://localhost/` 將 `DJANGO_DEBUG` 設為 `true`，不可直接用於正式環境。正式交付前必須補齊 HTTPS、正式網域、Secure Cookie、CSRF、防火牆與後端直連限制，並完成第 8 節驗收。

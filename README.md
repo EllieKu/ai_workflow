@@ -28,6 +28,7 @@ ai_workflow/
 │
 └── tools/                  # 整合測試與 Nginx 掛載工具
     ├── dify-compose.portal-nginx.yaml  # Portal 與 Dify Compose override
+    ├── dify-compose.portal-dev.yaml    # Portal 原始碼熱更新 override
     ├── portal-nginx-test.sh            # 整合測試操作腳本
     ├── portal-nginx-test.md            # 整合測試操作說明
     └── portal-nginx/
@@ -41,6 +42,7 @@ ai_workflow/
 ```bash
 ./tools/portal-nginx-test.sh check
 ./tools/portal-nginx-test.sh start
+./tools/portal-nginx-test.sh dev-start
 ./tools/portal-nginx-test.sh stop
 ./tools/portal-nginx-test.sh status
 ./tools/portal-nginx-test.sh logs

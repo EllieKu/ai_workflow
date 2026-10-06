@@ -8,6 +8,7 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PORTAL_DIR="$PROJECT_DIR/dify-portal"
 DIFY_DOCKER_DIR="$PROJECT_DIR/dify/docker"
 OVERRIDE_FILE="$SCRIPT_DIR/dify-compose.portal-nginx.yaml"
+DEV_OVERRIDE_FILE="$SCRIPT_DIR/dify-compose.portal-dev.yaml"
 AUTH_SECRET_FILE="$PORTAL_DIR/.portal-auth-secret"
 DJANGO_SECRET_FILE="$PORTAL_DIR/.secret-key"
 PORTAL_DB="$PORTAL_DIR/data/db.sqlite3"
@@ -19,6 +20,7 @@ Usage: $0 <command>
 
 Daily commands:
   start          Back up Portal SQLite, then build and start Dify with Portal
+  dev-start      Start Dify with bind-mounted Portal source and runserver
   stop           Stop Dify and Portal containers without deleting their data
   status         Show Portal and Nginx service status
   logs           Show the latest Portal and Nginx logs
@@ -66,6 +68,13 @@ compose_with_portal() {
     )
 }
 
+compose_for_dev() {
+    (
+        cd "$DIFY_DOCKER_DIR"
+        docker compose -f docker-compose.yaml -f "$OVERRIDE_FILE" -f "$DEV_OVERRIDE_FILE" "$@"
+    )
+}
+
 compose_base() {
     (
         cd "$DIFY_DOCKER_DIR"
@@ -102,6 +111,14 @@ case "$command" in
         compose_with_portal up -d --build
         compose_with_portal ps portal nginx
         ;;
+    dev-start)
+        ensure_files
+        ensure_auth_secret
+        backup_database
+        compose_for_dev config --quiet
+        compose_for_dev up -d --build
+        compose_for_dev ps portal nginx
+        ;;
     stop)
         ensure_auth_secret
         compose_with_portal stop
@@ -110,7 +127,8 @@ case "$command" in
         ensure_files
         ensure_auth_secret
         compose_with_portal config --quiet
-        echo "Compose configuration is valid."
+        compose_for_dev config --quiet
+        echo "Compose production and development configurations are valid."
         ;;
     status)
         ensure_auth_secret

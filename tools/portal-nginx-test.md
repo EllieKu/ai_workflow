@@ -38,6 +38,18 @@ http://localhost/
 
 本輪仍不驗收檔案、語音與停止生成；公開 listener會拒絕尚未審查的路由。
 
+## 開發 Portal
+
+需要修改 Portal程式並同時連接 Dify時，在共同根目錄執行：
+
+```bash
+./tools/portal-nginx-test.sh dev-start
+```
+
+此模式同樣啟動完整 Dify與單一公開的 Dify Nginx，但 Portal container改用 Django開發伺服器，並將本機`dify-portal/`掛載至 container。修改 Python、template或靜態檔案後，Django會自動重新載入，不需重新 build；瀏覽器仍從`http://localhost/`進入。
+
+新增或變更 Python套件、Dockerfile、Compose或 Nginx設定時，需重新執行`dev-start`。此模式會直接使用現有`dify-portal/data/db.sqlite3`，只供本機開發，不可用於正式環境。
+
 ## 停止完整 Dify 與 Portal
 
 ```bash

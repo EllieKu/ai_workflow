@@ -1,0 +1,13 @@
+# Apply after docker-compose.yaml and dify-compose.portal-nginx.yaml.
+# Bind-mount the Portal source so Django can reload local changes without an
+# image rebuild.
+services:
+  portal:
+    volumes:
+      - ../../dify-portal:/app
+    command:
+      - sh
+      - -c
+      - >-
+        python manage.py migrate --noinput &&
+        exec python manage.py runserver 0.0.0.0:8000
