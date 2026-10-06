@@ -128,10 +128,11 @@ Portal 不自行簽發額外交接 Token，也不接受瀏覽器自行登記 pas
 ```bash
 ./tools/portal-nginx-test.sh check
 ./tools/portal-nginx-test.sh start
+./tools/portal-nginx-test.sh stop
 ./tools/portal-nginx-test.sh status
 ./tools/portal-nginx-test.sh logs
 ```
 
-`start` 會先使用 SQLite online backup 備份 Portal 資料庫，再合併 Dify 原始 Compose 與 Portal override 啟動目前 profile 的服務。完整前置條件、影響範圍、Nginx 重載與回復方式見 `tools/portal-nginx-test.md`。
+`start` 會先使用 SQLite online backup 備份 Portal 資料庫，再合併 Dify 原始 Compose 與 Portal override 啟動目前 profile 的服務。`stop` 會停止相同設定中的 container，但不刪除資料或 volumes。完整前置條件、影響範圍、Nginx 重載與回復方式見 `tools/portal-nginx-test.md`。
 
 目前 Compose override 為配合 `http://localhost/` 將 `DJANGO_DEBUG` 設為 `true`，不可直接用於正式環境。正式交付前必須補齊 HTTPS、正式網域、Secure Cookie、CSRF、防火牆與後端直連限制，並完成第 8 節驗收。

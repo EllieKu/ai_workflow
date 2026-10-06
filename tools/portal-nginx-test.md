@@ -38,6 +38,14 @@ http://localhost/
 
 本輪仍不驗收檔案、語音與停止生成；公開 listener會拒絕尚未審查的路由。
 
+## 停止完整 Dify 與 Portal
+
+```bash
+./tools/portal-nginx-test.sh stop
+```
+
+`stop`會停止合併設定中的 Dify與 Portal container，但不會刪除 container、Portal SQLite、Dify資料或 Docker volumes。之後可再次使用`start`啟動。
+
 ## 查看狀態
 
 ```bash

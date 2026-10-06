@@ -41,8 +41,9 @@ ai_workflow/
 ```bash
 ./tools/portal-nginx-test.sh check
 ./tools/portal-nginx-test.sh start
+./tools/portal-nginx-test.sh stop
 ./tools/portal-nginx-test.sh status
 ./tools/portal-nginx-test.sh logs
 ```
 
-這組設定用於本機 HTTP 整合測試，尚不是正式部署設定。完整前置條件、影響範圍與回復方式見[整合測試操作](tools/portal-nginx-test.md)。有沒有要調整的
+這組設定用於本機 HTTP 整合測試，尚不是正式部署設定。完整前置條件、影響範圍與回復方式見[整合測試操作](tools/portal-nginx-test.md)。

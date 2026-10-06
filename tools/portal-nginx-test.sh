@@ -19,6 +19,7 @@ Usage: $0 <command>
 
 Daily commands:
   start          Back up Portal SQLite, then build and start Dify with Portal
+  stop           Stop Dify and Portal containers without deleting their data
   status         Show Portal and Nginx service status
   logs           Show the latest Portal and Nginx logs
 
@@ -100,6 +101,10 @@ case "$command" in
         compose_with_portal config --quiet
         compose_with_portal up -d --build
         compose_with_portal ps portal nginx
+        ;;
+    stop)
+        ensure_auth_secret
+        compose_with_portal stop
         ;;
     check)
         ensure_files
