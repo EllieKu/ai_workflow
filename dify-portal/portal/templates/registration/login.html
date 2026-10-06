@@ -1,0 +1,13 @@
+{% extends 'portal/base.html' %}
+{% block title %}登入 · AI Portal{% endblock %}
+{% block content %}
+<section class="login">
+  <h1>登入</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <button type="submit">登入</button>
+  </form>
+</section>
+{% endblock %}
