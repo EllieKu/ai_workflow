@@ -232,7 +232,7 @@
 - `DIFY_GATEWAY_ENABLED` 預設關閉。原型轉送原生 HTML／靜態資源與允許清單內的 API；以內部身分取得 Dify passport，僅保存摘要，綁定 Portal Session、BotGrant 及 App 設定。這是程式盤點結果，不是安全性驗收。
 - 原型限制為文字聊天；檔案、語音、獨立 Workflow 及其他未審查路由尚未支援，不能因此勾選完整功能／檔案隔離驗收。原型的精確 Origin 與 passport 寫入防護、上游信任及串流行為仍需實測。
 - [代理原型文件](dify-portal/docs/gateway.md) 另記錄 Django Client 連接 Dify 的文字聊天及部分拒絕案例，亦記錄原生入口仍對外開放。這些屬於既有文件紀錄，本次未重新查證；不等於完整瀏覽器或防繞過驗收。其測試結果引用本計畫，但本計畫先前只有 21 個基礎測試紀錄；需補齊代理驗證的命令、數量、版本及結果。
-- 已存在 [候選本機內部路由 override](tools/dify-compose.internal.yaml)，用途為將 Dify Nginx 綁定 loopback；本次未套用，也未確認實際暴露埠。正式部署仍須依部署拓撲限制直連，不能只依檔案存在判定安全。
+- 當時曾建立只將 Dify Nginx 綁定 loopback 的獨立候選 override，但未套用；後續已由 `dify-compose.portal-nginx.yaml` 統一管理公開與內部 listener，因此移除該重複檔案。正式部署仍須依部署拓撲限制直連。
 - `dify-portal/README.md` 仍主要描述基礎階段，後續在代理方案定案時同步更新。原型新增 migration 的實際套用狀態本次未查證。
 - 本次只修改 `AGENTS.md` 與 `PLAN.md`，檢查文件差異與一致性；未重跑程式測試、執行 migration 或部署，無需重啟服務。
 
@@ -245,6 +245,11 @@
 
 - Portal README 保留專案用途、本機操作、測試指令、必要的整合未驗收提醒及文件導覽；移除重複的測試數量、候選架構進度與部署待辦。既有功能、授權限制與測試結果沿用本計畫的紀錄，Portal 部署現況及缺少的部署待辦補入階段 3。
 - README 的 `git diff --check`、相對連結、程式碼區塊配對及 Secret Key 先於 migration 的順序檢查通過。僅調整文件，未重跑程式或整合測試，無部署或重啟步驟。
+
+### 2026-10-06：根目錄 README 校正
+
+- 移除根 README 過時的測試數量，讓動態進度統一由本計畫維護；修正 `tools/` 目錄樹，補上 Portal README、整合測試文件及常用操作入口。
+- 僅調整文件，未重跑程式或整合測試，無部署或重啟步驟。
 
 ### 2026-10-05：共同根目錄 Git 忽略設定
 
@@ -260,7 +265,7 @@
 
 ### 2026-10-05：代理授權補強與路由檢查
 
-- 本輪先核對運行中的 Compose：Dify API／Web 使用官方 `1.17.1` image，Nginx 仍發布 80／443。後續原始碼審查使用本機 `1.17.1` tag，不以較新的 main 代替運行基準。未切換服務或套用內部路由 override。
+- 本輪先核對運行中的 Compose：Dify API／Web 使用官方 `1.17.1` image，Nginx 仍發布 80／443。後續原始碼審查使用本機 `1.17.1` tag，不以較新的 main 代替運行基準。當時尚未切換服務或套用候選路由設定；後續已改由 `dify-compose.portal-nginx.yaml` 整合。
 - 新增 [路由與授權清單](dify-portal/docs/gateway-routes.md)，列出允許的方法、App／passport 綁定、Dify 對話與訊息所有權檢查，以及檔案、停止生成和其他未支援路由的缺口。此為候選代理的審查成果，尚未完成整合驗收或方案定案。
 - 發現 `AppTaskService.stop_task` 在舊機制所有權檢查 return 後，仍可能送出 GraphEngine 停止命令；因此移除 Portal 的 stop 允許規則，回應 403 且不轉送。這是原始碼發現，未對其他使用者的任務實際重現；停止功能須在可信任 task 所有權綁定或集中修正 Dify 後恢復並驗收。
 - 補強 `/api/passport` 對異常上游回應的處理：要求 JSON 物件、完整三段憑證、符合設定的 App ID／code，以及 UUID 格式的 EndUser ID；失敗回應通用 502，不登記憑證。這是可信任上游回應的一致性檢查，不是自行實作 JWT 簽章驗證，也不接受瀏覽器憑證自行登記。
