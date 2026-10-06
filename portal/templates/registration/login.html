@@ -2,8 +2,7 @@
 {% block title %}登入 · AI Portal{% endblock %}
 {% block content %}
 <section class="login">
-  <h1>登入 AI Portal</h1>
-  <p>使用公司提供的 Portal 帳號登入。</p>
+  <h1>登入</h1>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}

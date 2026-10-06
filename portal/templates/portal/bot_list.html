@@ -4,11 +4,20 @@
 <p>以下為您已獲授權使用的機器人。</p>
 <div class="bots">
   {% for bot in bots %}
-  <article>
-    <h2><a href="{% url 'portal:bot-detail' bot.id %}">{{ bot.name }}</a></h2>
-    <p>{{ bot.description|linebreaksbr }}</p>
-    <p class="muted">{% if chat_enabled %}可開啟文字聊天{% else %}聊天入口尚未開放{% endif %}</p>
-  </article>
+    {% if chat_enabled %}
+    <a class="bot-card" href="{% url 'portal:chat' bot.web_app_code %}" target="_blank" rel="noopener" aria-label="開啟 {{ bot.name }}">
+      <article>
+        <h2>{{ bot.name }}</h2>
+        <p class="bot-description">{{ bot.description|default:"尚無簡介"|linebreaksbr }}</p>
+      </article>
+    </a>
+    {% else %}
+    <article class="bot-card bot-card-disabled">
+      <h2>{{ bot.name }}</h2>
+      <p class="bot-description">{{ bot.description|default:"尚無簡介"|linebreaksbr }}</p>
+      <span class="muted">聊天入口尚未開放</span>
+    </article>
+    {% endif %}
   {% empty %}
   <p>目前沒有可使用的機器人，請聯絡管理者申請權限。</p>
   {% endfor %}
