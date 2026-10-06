@@ -65,7 +65,8 @@ Portal 不自行簽發額外交接 Token，也不接受瀏覽器自行登記 pas
 - [x] Django 登入與 POST 登出，使用 UUID 帳號主鍵。
 - [x] Bot、BotGrant、DifyIdentity 與 DifyPassport 模型及 migration。
 - [x] Django Admin 的帳號、Bot 與授權管理。
-- [x] 依授權篩選的 Bot 列表與明細；管理權不自動賦予 Bot 使用權。
+- [x] 依授權篩選的 Bot 列表；管理權不自動賦予 Bot 使用權。
+- [x] Bot 列表顯示名稱與簡介；點擊 Bot 卡片會以新分頁開啟受保護的 Dify 原生 Web App。
 - [x] Portal gateway、Nginx `auth_request` 端點、passport 摘要與 Portal Session／Bot／App 綁定。
 - [x] 已審查的文字聊天、對話歷史、訊息、命名、釘選與回饋路由候選規則。
 - [x] 本機 Portal image、Compose override、Nginx 模板、Portal healthcheck、SQLite online backup 及整合操作腳本。
