@@ -14,6 +14,29 @@
 
 ## 套用前檢查
 
+### Portal 獨立環境設定
+
+首次設定可在共同根目錄執行（已有 `.env` 時請直接編輯，不要覆蓋）：
+
+```bash
+cp dify-portal/.env.example dify-portal/.env
+```
+
+在 `dify-portal/.env` 設定 Portal 的連線參數，例如主機區網 IP 為 `192.168.1.100`：
+
+```dotenv
+PORTAL_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],192.168.1.100
+PORTAL_CSRF_TRUSTED_ORIGINS=http://192.168.1.100
+```
+
+保留 `localhost` 供健康檢查使用；使用非 80 埠時，origin 需附上埠號。`.env` 已由 Git 忽略。
+
+腳本透過 Compose `--env-file` 依序讀取 `dify/docker/.env` 與 `dify-portal/.env`，後者僅用來放 Portal 設定；shell 已匯出的同名變數優先。未建立 Portal `.env` 時仍使用既有預設值。一般及開發模式都適用；回復原生 Dify 時只讀取 Dify 設定。
+
+Compose override 將這兩個 `PORTAL_*` 變數映射成容器內的 `DJANGO_ALLOWED_HOSTS` 與 `DJANGO_CSRF_TRUSTED_ORIGINS`。範例檔其他 Django 變數是直接部署的參考，不會覆蓋目前 YAML 明列的環境設定。
+
+修改後執行下方 `check`，再使用 `start`（或開發模式的 `dev-start`）重建套用設定。其他電腦透過 `http://<主機區網 IP>/` 存取，主機防火牆須允許所需內網連入公開埠；不可對外開放內部 8081 入口。
+
 確認 `dify-portal/.secret-key`、`dify-portal/data/db.sqlite3` 與 `.venv` 已存在，並在共同根目錄執行：
 
 ```bash

@@ -13,6 +13,11 @@ AUTH_SECRET_FILE="$PORTAL_DIR/.portal-auth-secret"
 DJANGO_SECRET_FILE="$PORTAL_DIR/.secret-key"
 PORTAL_DB="$PORTAL_DIR/data/db.sqlite3"
 BACKUP_DIR="$PORTAL_DIR/backups"
+COMPOSE_ENV_ARGS=(--env-file "$DIFY_DOCKER_DIR/.env")
+# Keep existing localhost defaults when no Portal environment file exists.
+if [[ -f "$PORTAL_DIR/.env" ]]; then
+    COMPOSE_ENV_ARGS+=(--env-file "$PORTAL_DIR/.env")
+fi
 
 usage() {
     cat <<EOF
@@ -64,14 +69,14 @@ ensure_auth_secret() {
 compose_with_portal() {
     (
         cd "$DIFY_DOCKER_DIR"
-        docker compose -f docker-compose.yaml -f "$OVERRIDE_FILE" "$@"
+        docker compose "${COMPOSE_ENV_ARGS[@]}" -f docker-compose.yaml -f "$OVERRIDE_FILE" "$@"
     )
 }
 
 compose_for_dev() {
     (
         cd "$DIFY_DOCKER_DIR"
-        docker compose -f docker-compose.yaml -f "$OVERRIDE_FILE" -f "$DEV_OVERRIDE_FILE" "$@"
+        docker compose "${COMPOSE_ENV_ARGS[@]}" -f docker-compose.yaml -f "$OVERRIDE_FILE" -f "$DEV_OVERRIDE_FILE" "$@"
     )
 }
 

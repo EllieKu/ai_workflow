@@ -150,3 +150,21 @@ cd dify-portal
 `start` 會先使用 SQLite online backup 備份 Portal 資料庫，再合併 Dify 原始 Compose 與 Portal override 啟動目前 profile 的服務。`dev-start` 會額外掛載本機 Portal 原始碼並改用 Django 開發伺服器，以支援自動重載。`stop` 會停止相同 Compose project 的 container，但不刪除資料或 volumes。完整前置條件、影響範圍、Nginx 重載與回復方式見 `tools/portal-nginx-test.md`。
 
 目前 Compose override 為配合 `http://localhost/` 將 `DJANGO_DEBUG` 設為 `true`，不可直接用於正式環境。正式交付前必須補齊 HTTPS、正式網域、Secure Cookie、CSRF、防火牆與後端直連限制，並完成第 8 節驗收。
+
+### 區域網路連線設定盤點（2026-10-07）
+
+- 已檢查現有設定：公開 Nginx port mapping 未限制為 loopback；`dify/docker/.env` 使用 HTTP 80，Portal 預設只接受 localhost／loopback Host。
+- 供同網段測試時，在 `dify-portal/.env` 設定 `PORTAL_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],<主機區網 IP>`，保留 localhost 供 healthcheck 使用；可明列 `PORTAL_CSRF_TRUSTED_ORIGINS=http://<主機區網 IP>`（非 80 埠須附埠號）。兩者由 Portal Compose override 傳入 Django；`dify-portal/.env.example` 不會自動載入。
+- 套用步驟：執行 `./tools/portal-nginx-test.sh check`，再執行 `./tools/portal-nginx-test.sh start`；熱更新開發模式則使用 `dev-start`。其他電腦經主機區網 IP 的公開 Nginx 入口連線，防火牆僅對所需內網放行公開埠。
+- 保留原生上游 `127.0.0.1:8081:8081` 限制，不公開 Portal／Dify 後端埠。現有 Dify 對外 URL 設定為空，沒有需替換的 localhost 絕對 URL。
+- 已將 Portal 連線參數獨立至 `dify-portal/.env`（Git 忽略），啟動腳本的一般與開發 Compose 流程依序載入 Dify 及 Portal 環境檔；Portal 檔案缺少時保留既有預設值。已更新範例與操作文件，不修改 Dify 原生環境檔。
+- 未重啟服務或執行跨電腦連線驗證；本機 Portal 環境檔先保留 localhost 預設值，待填入實際區網 IP 後套用。內網正式使用仍須完成 HTTPS 與既定授權整合驗收。
+
+- 本次設定調整驗證：`bash -n`、一般／開發 Compose `config --quiet`、兩種模式的 Portal 環境映射與 8081 loopback 綁定檢查、Git 忽略與 `git diff --check` 均通過；未執行登入／聊天 E2E。
+
+### 區網設定啟動修復（2026-10-07）
+
+- Portal 啟動失敗原因：`PORTAL_CSRF_TRUSTED_ORIGINS` 填入裸 IP，Django 系統檢查回報 `4_0.E001` 並退出。
+- 已將本機 `dify-portal/.env` 修正為 `PORTAL_CSRF_TRUSTED_ORIGINS=http://192.168.51.90`，保留既有 Host 清單。
+- 已通過 Compose 設定檢查，執行 `start` 完成 SQLite 備份及服務啟動；Portal 為 healthy，Nginx 已啟動，8081 仍只綁定 loopback。
+- 從主機透過 `http://192.168.51.90/login/` 檢查回應為 HTTP 200。尚未從其他電腦測試，亦未執行實際登入／提問與拒絕存取 E2E。
