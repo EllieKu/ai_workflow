@@ -29,6 +29,7 @@ server {
     location = / { proxy_pass http://$portal_upstream; include proxy.conf; }
     location /login/ { proxy_pass http://$portal_upstream; include proxy.conf; }
     location /logout/ { proxy_pass http://$portal_upstream; include proxy.conf; }
+    location /password/ { proxy_pass http://$portal_upstream; include proxy.conf; }
     location /bots/ { proxy_pass http://$portal_upstream; include proxy.conf; }
     location /admin/ { proxy_pass http://$portal_upstream; include proxy.conf; }
     location /static/ { proxy_pass http://$portal_upstream; include proxy.conf; }

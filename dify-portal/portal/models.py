@@ -10,6 +10,7 @@ class User(AbstractUser):
     """Stable identity independent of the editable username."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    must_change_password = models.BooleanField("下次登入時必須修改密碼", default=False)
 
 
 class BotQuerySet(models.QuerySet):

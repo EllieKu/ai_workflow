@@ -12,8 +12,8 @@
 | Portal | Django 5.2 LTS，SQLite，已建立 Portal image |
 | 公開入口 | 沿用 Dify Compose 原有 `nginx` service，不新增外層或 Portal Nginx |
 | 授權方式 | Nginx `auth_request` 查詢 Django Session、BotGrant 及已登記的 Dify passport |
-| 已完成檢查 | 2026-10-05：55 個 Portal 測試通過，migration 一致性檢查無差異；Compose 合併設定與 Nginx 語法檢查通過 |
-| 本機運行檢查 | Portal healthcheck 為 healthy；首頁導向登入頁，登入頁可回應 |
+| 已完成檢查 | 2026-10-07：62 個 Portal 測試通過，migration 一致性檢查無差異；既有 Compose 合併設定與 Nginx 語法檢查曾通過 |
+| 本機運行檢查 | 2026-10-07：Portal healthcheck 為 healthy；`/password/change/` 經公開 Nginx 正確導向 Portal，未登入時回到 Portal 登入頁 |
 | 尚未完成 | 實際提問與 SSE、跨使用者／Bot 隔離、全面防繞過、檔案所有權、停止生成、並行負載與正式部署驗收 |
 
 未登入聊天入口會回應 401；登入後已能開啟 Dify 原生 Web App，初始相關 API 回應 200。實際提問、SSE 回答及完整隔離仍待驗證。
@@ -63,6 +63,8 @@ Portal 不自行簽發額外交接 Token，也不接受瀏覽器自行登記 pas
 ## 5. 已完成
 
 - [x] Django 登入與 POST 登出，使用 UUID 帳號主鍵。
+- [x] 管理員建立帳號或重設臨時密碼後，強制使用者登入並修改為不同密碼；完成前拒絕 Bot、聊天 API 與內部授權請求。
+- [x] 既有且啟用中的非 superuser 帳號已透過 migration 標記為必須修改密碼；公開 Nginx 已加入 `/password/` Portal 路由。
 - [x] Bot、BotGrant、DifyIdentity 與 DifyPassport 模型及 migration。
 - [x] Django Admin 的帳號、Bot 與授權管理。
 - [x] 依授權篩選的 Bot 列表；管理權不自動賦予 Bot 使用權。
@@ -76,6 +78,7 @@ Portal 不自行簽發額外交接 Token，也不接受瀏覽器自行登記 pas
 
 ### 功能與安全
 
+- 帳號不使用郵件重設。管理員核實使用者身分後，在 Django Admin 為該帳號設定個別臨時密碼；既有 Session 會因密碼雜湊變更而失效，使用者以臨時密碼登入後必須先修改密碼。導入此流程時，migration 會標記既有且啟用中的非 superuser 帳號。禁止多人共用同一組臨時密碼。
 - [ ] 用兩個帳號、不同 Bot 及共同授權 Bot 完成原生瀏覽器聊天、歷史、跨帳號／Bot 拒絕與撤權驗收。
 - [ ] 盤點並封鎖受管理 App 的原生匿名入口、直接 API、替代網域／埠及其他發布入口。
 - [ ] 完成檔案上傳、聊天引用、產生檔案與下載的使用者／Bot 所有權設計與驗收。
@@ -123,6 +126,15 @@ Portal 不自行簽發額外交接 Token，也不接受瀏覽器自行登記 pas
 完整授權驗收必須實際登入 Portal、開啟授權 Bot 並提問；單元測試或 mock 不可取代瀏覽器整合驗收。
 
 ## 9. 操作與交付
+
+部署本次帳號流程前，需先套用 migration：
+
+```bash
+cd dify-portal
+.venv/bin/python manage.py migrate
+```
+
+管理員在 Django Admin 新增使用者，或進入使用者頁面的密碼變更表單設定個別臨時密碼。系統會自動標記該帳號須修改密碼；使用者完成 Portal「修改密碼」後才可進入 Bot。首次套用此功能時，migration 也會標記既有且啟用中的非 superuser 帳號，superuser 不受影響。
 
 本機候選整合在共同根目錄使用：
 

@@ -62,6 +62,18 @@ export DJANGO_DEBUG=true
 .venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
 
+## 帳號與臨時密碼
+
+本專案不使用郵件重設密碼。管理員核實使用者身分後，在 Django Admin 新增帳號或進入該使用者的密碼變更表單，為每位使用者設定不同的臨時密碼。請勿讓多個帳號共用固定臨時密碼。
+
+管理員新增帳號或變更密碼後，系統會要求該使用者下次登入先修改密碼。完成前，Portal 會拒絕 Bot 清單、聊天頁、聊天 API 與內部授權請求。密碼變更也會使該帳號原有的登入 Session 在下一次請求時失效。使用者完成修改後，目前使用的 Session 會保留，可直接進入 Bot 清單。
+
+更新程式後先套用資料庫 migration。migration 會將既有且啟用中的非 superuser 帳號標記為必須修改密碼；superuser 不受影響：
+
+```bash
+.venv/bin/python manage.py migrate
+```
+
 `.env.example` 是設定參考，Django 不會自動讀取 `.env`。本機資料預設位於 `data/db.sqlite3`；可用 `PORTAL_DATA_DIR` 指定目錄。`DJANGO_DEBUG` 預設為 false，會啟用 HTTPS 導向與 Secure Cookie，本機 HTTP 開發才設為 true。
 
 ## 檢查與測試

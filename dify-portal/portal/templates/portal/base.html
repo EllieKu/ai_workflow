@@ -13,6 +13,7 @@
     {% if user.is_authenticated %}
       <nav aria-label="帳號">
         <span>{{ user.username }}</span>
+        <a href="{% url 'password_change' %}">修改密碼</a>
         {% if user.is_staff %}<a href="{% url 'admin:index' %}">管理</a>{% endif %}
         <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">登出</button></form>
       </nav>

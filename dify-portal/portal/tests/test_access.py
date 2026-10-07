@@ -78,6 +78,31 @@ class PortalAccessTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(BotGrant.objects.filter(user=self.alice, bot=self.bot_b).exists())
 
+    def test_admin_created_user_must_change_temporary_password(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse("admin:portal_user_add"), {
+            "username": "new-user",
+            "password1": "temporary-password-456",
+            "password2": "temporary-password-456",
+            "_save": "Save",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(User.objects.get(username="new-user").must_change_password)
+
+    def test_admin_password_reset_marks_account_and_invalidates_old_session(self):
+        old_session = Client()
+        old_session.force_login(self.alice)
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse("admin:auth_user_password_change", args=[self.alice.pk]), {
+            "password1": "temporary-password-456",
+            "password2": "temporary-password-456",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.alice.refresh_from_db()
+        self.assertTrue(self.alice.must_change_password)
+        self.assertTrue(self.alice.check_password("temporary-password-456"))
+        self.assertRedirects(old_session.get(reverse("portal:bot-list")), reverse("login") + "?next=/")
+
     def test_view_permission_does_not_allow_grant_creation(self):
         self.alice.is_staff = True
         self.alice.save(update_fields=["is_staff"])
@@ -191,3 +216,64 @@ class AuthenticationTests(TestCase):
         self.assertRedirects(response, reverse("login"))
         self.client.cookies["portal_sessionid"] = old_session
         self.assertEqual(self.client.get(reverse("portal:bot-list")).status_code, 302)
+
+    def test_temporary_password_requires_change_before_portal_access(self):
+        self.user.must_change_password = True
+        self.user.save(update_fields=["must_change_password"])
+        self.assertEqual(self.login().url, reverse("portal:bot-list"))
+        self.assertRedirects(self.client.get(reverse("portal:bot-list")), reverse("password_change"))
+        self.assertContains(
+            self.client.get(reverse("password_change")),
+            "目前使用的是管理員設定的臨時密碼。完成修改後才能使用機器人。",
+        )
+        self.assertRedirects(self.client.get("/chat/example"), reverse("password_change"))
+        response = self.client.get("/api/system-features")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["code"], "password_change_required")
+
+    @override_settings(DIFY_GATEWAY_ENABLED=True, DIFY_AUTH_REQUEST_SECRET="test-secret")
+    def test_temporary_password_is_rejected_by_internal_authorization(self):
+        self.user.must_change_password = True
+        self.user.save(update_fields=["must_change_password"])
+        self.login()
+        response = self.client.get(
+            reverse("portal:dify-auth"),
+            HTTP_X_PORTAL_AUTH_SECRET="test-secret",
+            HTTP_X_ORIGINAL_URI="/chat/example",
+            HTTP_X_ORIGINAL_METHOD="GET",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_password_change_clears_requirement_and_keeps_current_session(self):
+        self.user.must_change_password = True
+        self.user.save(update_fields=["must_change_password"])
+        self.login()
+        token = self.csrf_token(reverse("password_change"))
+        response = self.client.post(reverse("password_change"), {
+            "old_password": "test-password-123",
+            "new_password1": "new-secure-password-456",
+            "new_password2": "new-secure-password-456",
+            "csrfmiddlewaretoken": token,
+        })
+        self.assertRedirects(response, reverse("portal:bot-list"))
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.must_change_password)
+        self.assertTrue(self.user.check_password("new-secure-password-456"))
+        self.assertEqual(self.client.get(reverse("portal:bot-list")).status_code, 200)
+        self.assertIn("_auth_user_id", self.client.session)
+
+    def test_password_change_rejects_reusing_temporary_password(self):
+        self.user.must_change_password = True
+        self.user.save(update_fields=["must_change_password"])
+        self.login()
+        token = self.csrf_token(reverse("password_change"))
+        response = self.client.post(reverse("password_change"), {
+            "old_password": "test-password-123",
+            "new_password1": "test-password-123",
+            "new_password2": "test-password-123",
+            "csrfmiddlewaretoken": token,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "新密碼不可與目前密碼相同。")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.must_change_password)
