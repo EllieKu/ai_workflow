@@ -8,6 +8,12 @@ server {
     resolver 127.0.0.11 valid=30s ipv6=off;
     set $portal_upstream ${PORTAL_UPSTREAM};
 
+    location /files/ {
+        set $api_upstream api:5001;
+        proxy_pass http://$api_upstream;
+        include proxy.conf;
+    }
+
     location = /_portal_auth {
         internal;
         proxy_pass http://$portal_upstream/_internal/dify-auth;
@@ -87,7 +93,7 @@ server {
     }
 
     # These publishing surfaces are outside the Portal Web App contract.
-    location ~ ^/(?:v1|openapi|files|explore|mcp|triggers)(?:/|$) { return 404; }
+    location ~ ^/(?:v1|openapi|explore|mcp|triggers)(?:/|$) { return 404; }
 
     # Preserve Dify Console page routing. Its API remains under /console/api.
     location / {

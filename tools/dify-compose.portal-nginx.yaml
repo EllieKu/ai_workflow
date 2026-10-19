@@ -9,7 +9,7 @@ services:
     environment:
       # Local HTTP integration test only. Production must use HTTPS and false.
       DJANGO_DEBUG: "true"
-      DJANGO_ALLOWED_HOSTS: ${PORTAL_ALLOWED_HOSTS:-localhost,127.0.0.1,[::1]}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,[::1]}
       DJANGO_CSRF_TRUSTED_ORIGINS: ${PORTAL_CSRF_TRUSTED_ORIGINS:-}
       DJANGO_TRUST_PROXY: "true"
       DJANGO_SECRET_KEY_FILE: /run/secrets/portal_secret_key

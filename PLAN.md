@@ -154,7 +154,7 @@ cd dify-portal
 ### 區域網路連線設定盤點（2026-10-07）
 
 - 已檢查現有設定：公開 Nginx port mapping 未限制為 loopback；`dify/docker/.env` 使用 HTTP 80，Portal 預設只接受 localhost／loopback Host。
-- 供同網段測試時，在 `dify-portal/.env` 設定 `PORTAL_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],<主機區網 IP>`，保留 localhost 供 healthcheck 使用；可明列 `PORTAL_CSRF_TRUSTED_ORIGINS=http://<主機區網 IP>`（非 80 埠須附埠號）。兩者由 Portal Compose override 傳入 Django；`dify-portal/.env.example` 不會自動載入。
+- 供同網段測試時，在 `dify-portal/.env` 設定 `DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],<主機區網 IP>`，保留 localhost 供 healthcheck 使用；可明列 `PORTAL_CSRF_TRUSTED_ORIGINS=http://<主機區網 IP>`（非 80 埠須附埠號）。兩者由 Portal Compose override 傳入 Django；`dify-portal/.env.example` 不會自動載入。
 - 套用步驟：執行 `./tools/portal-nginx-test.sh check`，再執行 `./tools/portal-nginx-test.sh start`；熱更新開發模式則使用 `dev-start`。其他電腦經主機區網 IP 的公開 Nginx 入口連線，防火牆僅對所需內網放行公開埠。
 - 保留原生上游 `127.0.0.1:8081:8081` 限制，不公開 Portal／Dify 後端埠。現有 Dify 對外 URL 設定為空，沒有需替換的 localhost 絕對 URL。
 - 已將 Portal 連線參數獨立至 `dify-portal/.env`（Git 忽略），啟動腳本的一般與開發 Compose 流程依序載入 Dify 及 Portal 環境檔；Portal 檔案缺少時保留既有預設值。已更新範例與操作文件，不修改 Dify 原生環境檔。
@@ -168,3 +168,17 @@ cd dify-portal
 - 已將本機 `dify-portal/.env` 修正為 `PORTAL_CSRF_TRUSTED_ORIGINS=http://192.168.51.90`，保留既有 Host 清單。
 - 已通過 Compose 設定檢查，執行 `start` 完成 SQLite 備份及服務啟動；Portal 為 healthy，Nginx 已啟動，8081 仍只綁定 loopback。
 - 從主機透過 `http://192.168.51.90/login/` 檢查回應為 HTTP 200。尚未從其他電腦測試，亦未執行實際登入／提問與拒絕存取 E2E。
+
+### 區網 Host 白名單修復（2026-10-19）
+
+- 發現本機 `dify-portal/.env` 使用 `DJANGO_ALLOWED_HOSTS` 與 `DJANGO_CSRF_TRUSTED_ORIGINS`，但 Compose override 讀取的是 `PORTAL_*`，導致容器採用僅允許 localhost 的預設值。
+- 當時將本機環境變數名稱修正為 `PORTAL_ALLOWED_HOSTS` 與 `PORTAL_CSRF_TRUSTED_ORIGINS`，保留 `192.168.51.90` 及 localhost 設定；一般與開發 Compose 設定檢查通過。Host 變數現已依下節統一為 `DJANGO_ALLOWED_HOSTS`。
+- 已透過合併 Compose 執行 `up -d --no-deps portal`，重新建立 Portal 容器套用設定。日後修改相同環境變數可執行 `./tools/portal-nginx-test.sh start` 套用。
+- 經本機公開 Nginx 請求 `/login/`：`Host: 192.168.51.90` 回應 200；`Host: untrusted.invalid` 回應 400。尚未從其他電腦驗證，也未執行登入／提問 E2E。
+
+### Host 環境變數名稱統一（2026-10-19）
+
+- 依需求將 Host 白名單統一為 `DJANGO_ALLOWED_HOSTS`，`.env` → Compose → Django 全程使用相同名稱；移除 Compose 對 `PORTAL_ALLOWED_HOSTS` 的讀取，不保留舊名稱別名。Django 設定讀取程式已使用相同名稱，無須修改。
+- 已同步一般／開發模式共用的 Compose override、本機 `.env`、範例、Portal README 與整合操作文件；本機白名單仍保留 localhost／loopback 及 `192.168.51.90`。CSRF 變數維持原有名稱與映射。
+- 驗證：一般與開發 Compose `config --quiet` 通過；兩種模式各驗證本機設定、shell 覆寫、空值採用 loopback 預設值、舊名稱不生效，共 8 項映射檢查通過；範例僅有一筆 Host 設定，`git diff --check` 通過。未重跑瀏覽器登入／聊天 E2E。
+- 部署：既有環境檔將 `PORTAL_ALLOWED_HOSTS` 改為 `DJANGO_ALLOWED_HOSTS` 並保留值，執行 `./tools/portal-nginx-test.sh check` 後，以 `start`（開發模式使用 `dev-start`）套用。本次容器內變數名稱與有效白名單值均未改變，未重啟服務。

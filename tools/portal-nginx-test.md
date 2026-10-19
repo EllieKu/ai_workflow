@@ -25,7 +25,7 @@ cp dify-portal/.env.example dify-portal/.env
 在 `dify-portal/.env` 設定 Portal 的連線參數，例如主機區網 IP 為 `192.168.1.100`：
 
 ```dotenv
-PORTAL_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],192.168.1.100
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],192.168.1.100
 PORTAL_CSRF_TRUSTED_ORIGINS=http://192.168.1.100
 ```
 
@@ -33,7 +33,9 @@ PORTAL_CSRF_TRUSTED_ORIGINS=http://192.168.1.100
 
 腳本透過 Compose `--env-file` 依序讀取 `dify/docker/.env` 與 `dify-portal/.env`，後者僅用來放 Portal 設定；shell 已匯出的同名變數優先。未建立 Portal `.env` 時仍使用既有預設值。一般及開發模式都適用；回復原生 Dify 時只讀取 Dify 設定。
 
-Compose override 將這兩個 `PORTAL_*` 變數映射成容器內的 `DJANGO_ALLOWED_HOSTS` 與 `DJANGO_CSRF_TRUSTED_ORIGINS`。範例檔其他 Django 變數是直接部署的參考，不會覆蓋目前 YAML 明列的環境設定。
+Compose override 將 `DJANGO_ALLOWED_HOSTS` 以相同名稱傳入容器，再由 Django 讀取為 `ALLOWED_HOSTS`；未設定或值為空時預設只允許 localhost／loopback。既有環境檔若使用 `PORTAL_ALLOWED_HOSTS`，須將名稱改成 `DJANGO_ALLOWED_HOSTS`，舊名稱不再讀取。此清單填寫 Portal 的網域或 IP，不含協定、埠號或路徑，也不是連線者電腦的 IP。
+
+`PORTAL_CSRF_TRUSTED_ORIGINS` 仍映射成容器內的 `DJANGO_CSRF_TRUSTED_ORIGINS`。範例檔其他 Django 變數是直接部署的參考，不會覆蓋目前 YAML 明列的環境設定。
 
 修改後執行下方 `check`，再使用 `start`（或開發模式的 `dev-start`）重建套用設定。其他電腦透過 `http://<主機區網 IP>/` 存取，主機防火牆須允許所需內網連入公開埠；不可對外開放內部 8081 入口。
 
