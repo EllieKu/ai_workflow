@@ -26,16 +26,30 @@ cp dify-portal/.env.example dify-portal/.env
 
 ```dotenv
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],192.168.1.100
-PORTAL_CSRF_TRUSTED_ORIGINS=http://192.168.1.100
+DJANGO_CSRF_TRUSTED_ORIGINS=http://192.168.1.100
 ```
 
 保留 `localhost` 供健康檢查使用；使用非 80 埠時，origin 需附上埠號。`.env` 已由 Git 忽略。
 
-腳本透過 Compose `--env-file` 依序讀取 `dify/docker/.env` 與 `dify-portal/.env`，後者僅用來放 Portal 設定；shell 已匯出的同名變數優先。未建立 Portal `.env` 時仍使用既有預設值。
+腳本的 `--env-file` 只讀取 `dify/docker/.env`，用於 Compose 變數替換；Portal service 另透過 `env_file` 將 `dify-portal/.env` 的變數直接傳入容器。Portal `.env` 必須存在，首次使用請從範例複製。`environment` 的同名設定優先於 `env_file`；shell 匯出的同名變數不會覆蓋 `.env` 中直接填寫的值（若值含 `${...}`，仍會進行 Compose 插值）。
 
-Compose override 將 `DJANGO_ALLOWED_HOSTS` 以相同名稱傳入容器，再由 Django 讀取為 `ALLOWED_HOSTS`；未設定或值為空時預設只允許 localhost／loopback。既有環境檔若使用 `PORTAL_ALLOWED_HOSTS`，須將名稱改成 `DJANGO_ALLOWED_HOSTS`，舊名稱不再讀取。此清單填寫 Portal 的網域或 IP，不含協定、埠號或路徑，也不是連線者電腦的 IP。
+Compose override 將 `DJANGO_ALLOWED_HOSTS` 以相同名稱傳入容器，再由 Django 讀取為 `ALLOWED_HOSTS`；未設定時由 Django 預設為 localhost／loopback，空字串則會產生空白名單。既有環境檔若使用 `PORTAL_ALLOWED_HOSTS`，須將名稱改成 `DJANGO_ALLOWED_HOSTS`，舊名稱不再讀取。此清單填寫 Portal 的網域或 IP，不含協定、埠號或路徑，也不是連線者電腦的 IP。
 
-`PORTAL_CSRF_TRUSTED_ORIGINS` 仍映射成容器內的 `DJANGO_CSRF_TRUSTED_ORIGINS`。範例檔其他 Django 變數是直接部署的參考，不會覆蓋目前 YAML 明列的環境設定。
+部署參數統一由 `.env` 提供，Compose 以相同名稱傳入容器：
+
+| 變數 | `.env.example` 的建議值 |
+| --- | --- |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1,[::1]` |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | 空字串 |
+| `DJANGO_DEBUG` | `true`（僅供本機 HTTP） |
+| `DJANGO_TRUST_PROXY` | `true`（信任此整合的 Nginx） |
+| `DJANGO_HSTS_SECONDS` | `0` |
+
+Compose 不再為這五項設定提供預設值。缺少變數時由 Django 使用自身預設值；空字串不等於未設定，DEBUG、代理信任與 HSTS 不可留空。Django 的 DEBUG 與代理信任預設為 `false`，本機 HTTP 整合請保留範例中的明確值。
+
+既有 `.env` 的 `PORTAL_CSRF_TRUSTED_ORIGINS` 須改名為 `DJANGO_CSRF_TRUSTED_ORIGINS` 並保留值；不再讀取舊名稱。舊範例的 DEBUG 與代理設定曾被 Compose 固定值覆蓋，遷移時應明確設為 `true`，以維持本機 HTTP 整合行為。
+
+`PORTAL_DATA_DIR`、`DIFY_UPSTREAM_URL` 與 `DIFY_GATEWAY_ENABLED` 由 Compose 管理，請勿在 Portal `.env` 重複設定。金鑰維持 `.secret-key` 掛載與腳本讀取 `.portal-auth-secret` 的方式。直接執行 Django 不會自動載入 `.env`，須自行匯出需要的環境變數；本機直接啟動時，請依是否經過可信任代理設定 `DJANGO_TRUST_PROXY`。
 
 修改後執行下方 `check`，再使用 `start`重建套用設定。其他電腦透過 `http://<主機區網 IP>/` 存取，主機防火牆須允許所需內網連入公開埠；不可對外開放內部 8081 入口。
 

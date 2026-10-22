@@ -74,7 +74,7 @@ export DJANGO_DEBUG=true
 .venv/bin/python manage.py migrate
 ```
 
-`.env.example` 是設定參考，Django 不會自動讀取 `.env`。本機資料預設位於 `data/db.sqlite3`；可用 `PORTAL_DATA_DIR` 指定目錄。`DJANGO_DEBUG` 預設為 false，會啟用 HTTPS 導向與 Secure Cookie，本機 HTTP 開發才設為 true。
+`.env.example` 是 Compose 本機 HTTP 整合的部署參數範例，Django 不會自動讀取 `.env`。本機資料預設位於 `data/db.sqlite3`；可用 `PORTAL_DATA_DIR` 指定目錄。`DJANGO_DEBUG` 預設為 false，會啟用 HTTPS 導向與 Secure Cookie，本機 HTTP 開發才設為 true。
 
 ## 檢查與測試
 
@@ -90,4 +90,6 @@ export DJANGO_DEBUG=true
 
 本機整合測試沿用 Dify Compose現有 Nginx，Portal container只執行 Django／Gunicorn。完整服務的啟動、檢查與停止方式見[整合測試操作文件](../tools/portal-nginx-test.md)。候選設定尚未完成瀏覽器驗收，不能當作正式部署設定。
 
-Host 白名單統一使用 `DJANGO_ALLOWED_HOSTS`：Compose 會從 `dify-portal/.env` 讀取並以相同名稱傳入容器，Django 再讀取為 `ALLOWED_HOSTS`。既有的 `PORTAL_ALLOWED_HOSTS` 須改名；保留原有白名單值即可。直接執行 Django 時，同樣使用 `DJANGO_ALLOWED_HOSTS` 環境變數，但須自行匯出，不會自動載入 `.env`。
+Host 白名單統一使用 `DJANGO_ALLOWED_HOSTS`：Compose 透過 service 的 `env_file` 從 `dify-portal/.env` 讀取並以相同名稱傳入容器，Django 再讀取為 `ALLOWED_HOSTS`。既有的 `PORTAL_ALLOWED_HOSTS` 須改名；保留原有白名單值即可。直接執行 Django 時，同樣使用 `DJANGO_ALLOWED_HOSTS` 環境變數，但須自行匯出，不會自動載入 `.env`。
+
+Compose 的部署參數統一使用 `.env` 中的 `DJANGO_ALLOWED_HOSTS`、`DJANGO_CSRF_TRUSTED_ORIGINS`、`DJANGO_DEBUG`、`DJANGO_TRUST_PROXY` 與 `DJANGO_HSTS_SECONDS`。舊的 `PORTAL_CSRF_TRUSTED_ORIGINS` 請改名並保留值；舊範例中的 DEBUG 與代理設定曾被 Compose 覆蓋，遷移時設為 `true` 以維持本機 HTTP 整合行為。容器資料路徑、上游位址與閘門開關由 Compose 管理，金鑰仍使用獨立檔案。Portal `.env` 必須存在；其中直接填寫的值不受 shell 同名變數覆蓋。缺少設定時由 Django 使用自身預設值，空字串不會自動套用預設值。完整建議值與遷移說明見[整合測試操作文件](../tools/portal-nginx-test.md)。

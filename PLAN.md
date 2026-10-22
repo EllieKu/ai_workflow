@@ -152,7 +152,7 @@ cd dify-portal
 ### 區域網路連線設定盤點（2026-10-07）
 
 - 已檢查現有設定：公開 Nginx port mapping 未限制為 loopback；`dify/docker/.env` 使用 HTTP 80，Portal 預設只接受 localhost／loopback Host。
-- 供同網段測試時，在 `dify-portal/.env` 設定 `DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],<主機區網 IP>`，保留 localhost 供 healthcheck 使用；可明列 `PORTAL_CSRF_TRUSTED_ORIGINS=http://<主機區網 IP>`（非 80 埠須附埠號）。兩者由 Portal Compose override 傳入 Django；`dify-portal/.env.example` 不會自動載入。
+- 供同網段測試時，在 `dify-portal/.env` 設定 `DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[::1],<主機區網 IP>`，保留 localhost 供 healthcheck 使用；可明列 `DJANGO_CSRF_TRUSTED_ORIGINS=http://<主機區網 IP>`（非 80 埠須附埠號）。兩者由 Portal Compose override 傳入 Django；`dify-portal/.env.example` 不會自動載入。
 - 套用步驟：執行 `./tools/portal-nginx-test.sh check`，再執行 `./tools/portal-nginx-test.sh start`。其他電腦經主機區網 IP 的公開 Nginx 入口連線，防火牆僅對所需內網放行公開埠。
 - 保留原生上游 `127.0.0.1:8081:8081` 限制，不公開 Portal／Dify 後端埠。現有 Dify 對外 URL 設定為空，沒有需替換的 localhost 絕對 URL。
 - 已將 Portal 連線參數獨立至 `dify-portal/.env`（Git 忽略），啟動腳本的 Compose 流程依序載入 Dify 及 Portal 環境檔；Portal 檔案缺少時保留既有預設值。已更新範例與操作文件，不修改 Dify 原生環境檔。
@@ -180,3 +180,11 @@ cd dify-portal
 - 已同步Compose override、本機 `.env`、範例、Portal README 與整合操作文件；本機白名單仍保留 localhost／loopback 及 `192.168.51.90`。CSRF 變數維持原有名稱與映射。
 - 驗證：Compose `config --quiet` 通過；本機設定、shell 覆寫、空值採用 loopback 預設值、舊名稱不生效的映射檢查通過；範例僅有一筆 Host 設定，`git diff --check` 通過。未重跑瀏覽器登入／聊天 E2E。
 - 部署：既有環境檔將 `PORTAL_ALLOWED_HOSTS` 改為 `DJANGO_ALLOWED_HOSTS` 並保留值，執行 `./tools/portal-nginx-test.sh check` 後，以 `start`套用。本次容器內變數名稱與有效白名單值均未改變，未重啟服務。
+
+### Portal 部署參數整理（2026-10-22）
+
+- Portal service 使用 `env_file` 直接載入 `dify-portal/.env`；腳本 `--env-file` 僅保留 Dify 環境檔供 Compose 插值。Portal `.env` 為必要檔案。
+- DEBUG、Host、CSRF origin、代理信任與 HSTS 由 `.env` 提供；CSRF 統一為 `DJANGO_CSRF_TRUSTED_ORIGINS`。上方日期較早的映射、shell 優先序與空值預設為歷史紀錄，現以 `env_file` 行為為準。
+- 本機 `.env` 保留 Host 與 CSRF 值，DEBUG／代理信任／HSTS 保持 `true`／`true`／`0`。Compose `environment` 僅保留容器路徑、內部路由及共享授權金鑰，優先於檔案中的同名值。
+- 不修改 `settings.py`，不自動載入本機 Django 的 `.env`；未重啟服務。
+- 驗證：本機與範例 Compose 設定、env_file 直接傳值、shell 不覆蓋固定值、environment 優先序、空值與缺值、缺少檔案報錯、腳本語法及 `git diff --check` 均通過；確認 `settings.py` 無變更，未執行瀏覽器驗收。

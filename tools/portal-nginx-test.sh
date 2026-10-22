@@ -13,10 +13,6 @@ DJANGO_SECRET_FILE="$PORTAL_DIR/.secret-key"
 PORTAL_DB="$PORTAL_DIR/data/db.sqlite3"
 BACKUP_DIR="$PORTAL_DIR/backups"
 COMPOSE_ENV_ARGS=(--env-file "$DIFY_DOCKER_DIR/.env")
-# Keep existing localhost defaults when no Portal environment file exists.
-if [[ -f "$PORTAL_DIR/.env" ]]; then
-    COMPOSE_ENV_ARGS+=(--env-file "$PORTAL_DIR/.env")
-fi
 
 usage() {
     cat <<EOF
