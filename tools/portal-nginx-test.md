@@ -37,7 +37,7 @@ Compose override 將 `DJANGO_ALLOWED_HOSTS` 以相同名稱傳入容器，再由
 
 `PORTAL_CSRF_TRUSTED_ORIGINS` 仍映射成容器內的 `DJANGO_CSRF_TRUSTED_ORIGINS`。範例檔其他 Django 變數是直接部署的參考，不會覆蓋目前 YAML 明列的環境設定。
 
-修改後執行下方 `check`，再使用 `start`（或開發模式的 `dev-start`）重建套用設定。其他電腦透過 `http://<主機區網 IP>/` 存取，主機防火牆須允許所需內網連入公開埠；不可對外開放內部 8081 入口。
+修改後執行下方 `check`，再使用 `start`重建套用設定。其他電腦透過 `http://<主機區網 IP>/` 存取，主機防火牆須允許所需內網連入公開埠；不可對外開放內部 8081 入口。
 
 確認 `dify-portal/.secret-key`、`dify-portal/data/db.sqlite3` 與 `.venv` 已存在，並在共同根目錄執行：
 
@@ -62,18 +62,6 @@ http://localhost/
 依序驗證 Portal登入、授權 Bot列表、開啟原生 Dify Web App、送出文字問題、SSE回答與歷史紀錄。再驗證未登入、未授權 Bot、跨 Bot憑證、登出與撤權後的請求遭拒絕。
 
 本輪仍不驗收檔案、語音與停止生成；公開 listener會拒絕尚未審查的路由。
-
-## 開發 Portal
-
-需要修改 Portal程式並同時連接 Dify時，在共同根目錄執行：
-
-```bash
-./tools/portal-nginx-test.sh dev-start
-```
-
-此模式同樣啟動完整 Dify與單一公開的 Dify Nginx，但 Portal container改用 Django開發伺服器，並將本機`dify-portal/`掛載至 container。修改 Python、template或靜態檔案後，Django會自動重新載入，不需重新 build；瀏覽器仍從`http://localhost/`進入。
-
-新增或變更 Python套件、Dockerfile、Compose或 Nginx設定時，需重新執行`dev-start`。此模式會直接使用現有`dify-portal/data/db.sqlite3`，只供本機開發，不可用於正式環境。
 
 ## 停止完整 Dify 與 Portal
 
