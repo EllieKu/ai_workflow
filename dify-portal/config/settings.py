@@ -21,11 +21,11 @@ def env_list(name, default=""):
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
-    secret_file = Path(os.environ.get("DJANGO_SECRET_KEY_FILE", BASE_DIR / ".secret-key"))
+    secret_file = BASE_DIR / ".secret-key"
     try:
         SECRET_KEY = secret_file.read_text().strip()
     except OSError as exc:
-        raise ImproperlyConfigured("Set DJANGO_SECRET_KEY or DJANGO_SECRET_KEY_FILE") from exc
+        raise ImproperlyConfigured("Set DJANGO_SECRET_KEY or provide a .secret-key file in BASE_DIR") from exc
 if len(SECRET_KEY) < 50:
     raise ImproperlyConfigured("DJANGO_SECRET_KEY must contain at least 50 characters")
 

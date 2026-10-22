@@ -12,7 +12,6 @@ services:
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,[::1]}
       DJANGO_CSRF_TRUSTED_ORIGINS: ${PORTAL_CSRF_TRUSTED_ORIGINS:-}
       DJANGO_TRUST_PROXY: "true"
-      DJANGO_SECRET_KEY_FILE: /run/secrets/portal_secret_key
       PORTAL_DATA_DIR: /app/data
       DIFY_GATEWAY_ENABLED: "true"
       DIFY_UPSTREAM_URL: http://nginx:8081
@@ -23,7 +22,7 @@ services:
         target: /app/data
       - type: bind
         source: ../../dify-portal/.secret-key
-        target: /run/secrets/portal_secret_key
+        target: /app/.secret-key
         read_only: true
         bind:
           create_host_path: false

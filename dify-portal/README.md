@@ -42,7 +42,7 @@ with os.fdopen(os.open('.secret-key', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o60
 PY
 ```
 
-Django 會優先讀取環境變數 `DJANGO_SECRET_KEY`；未設定時，讀取 `DJANGO_SECRET_KEY_FILE` 指定的檔案，預設為 `dify-portal/.secret-key`。金鑰至少需有 50 個字元，上述指令產生的長度符合要求。若已透過環境變數提供有效金鑰，可略過產生本機檔案。
+Django 會優先讀取環境變數 `DJANGO_SECRET_KEY`；未設定時，讀取 Portal 根目錄的 `.secret-key`（本機為 `dify-portal/.secret-key`，容器內為 `/app/.secret-key`）。金鑰至少需有 50 個字元，上述指令產生的長度符合要求。若已透過環境變數提供有效金鑰，可略過產生本機檔案。
 
 後續啟動請沿用同一份金鑰。更換金鑰會使既有登入 Session 等簽章資料失效，使用者需要重新登入。
 
