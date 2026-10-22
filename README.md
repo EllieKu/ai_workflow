@@ -9,7 +9,7 @@ Portal 與 Dify 的存取授權整合仍在驗收中，不應視為正式權限�
 - [AGENTS.md](AGENTS.md)：長期開發規則、身分安全與驗證要求。
 - [PLAN.md](PLAN.md)：需求、建議方案、待辦與驗收進度；實作狀態以此文件為準。
 - [Portal README](dify-portal/README.md)：Portal 安裝、本機啟動與測試指令。
-- [整合測試操作](tools/portal-nginx-test.md)：Portal 與 Dify 的 Compose 啟動、狀態、日誌及回復方式。
+- [整合測試操作](tools/portal-nginx-test.md)：Portal 與 Dify 的 Compose 啟動、停止、狀態與 Nginx 重建方式。
 
 ## 專案結構
 
@@ -43,7 +43,6 @@ ai_workflow/
 ./tools/portal-nginx-test.sh start
 ./tools/portal-nginx-test.sh stop
 ./tools/portal-nginx-test.sh status
-./tools/portal-nginx-test.sh logs
 ```
 
-這組設定用於本機 HTTP 整合測試，尚不是正式部署設定。完整前置條件、影響範圍與回復方式見[整合測試操作](tools/portal-nginx-test.md)。
+這組設定用於本機 HTTP 整合測試，尚不是正式部署設定。完整前置條件、影響範圍與操作方式見[整合測試操作](tools/portal-nginx-test.md)。

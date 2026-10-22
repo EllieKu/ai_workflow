@@ -31,7 +31,7 @@ PORTAL_CSRF_TRUSTED_ORIGINS=http://192.168.1.100
 
 保留 `localhost` 供健康檢查使用；使用非 80 埠時，origin 需附上埠號。`.env` 已由 Git 忽略。
 
-腳本透過 Compose `--env-file` 依序讀取 `dify/docker/.env` 與 `dify-portal/.env`，後者僅用來放 Portal 設定；shell 已匯出的同名變數優先。未建立 Portal `.env` 時仍使用既有預設值。一般及開發模式都適用；回復原生 Dify 時只讀取 Dify 設定。
+腳本透過 Compose `--env-file` 依序讀取 `dify/docker/.env` 與 `dify-portal/.env`，後者僅用來放 Portal 設定；shell 已匯出的同名變數優先。未建立 Portal `.env` 時仍使用既有預設值。
 
 Compose override 將 `DJANGO_ALLOWED_HOSTS` 以相同名稱傳入容器，再由 Django 讀取為 `ALLOWED_HOSTS`；未設定或值為空時預設只允許 localhost／loopback。既有環境檔若使用 `PORTAL_ALLOWED_HOSTS`，須將名稱改成 `DJANGO_ALLOWED_HOSTS`，舊名稱不再讀取。此清單填寫 Portal 的網域或 IP，不含協定、埠號或路徑，也不是連線者電腦的 IP。
 
@@ -77,24 +77,10 @@ http://localhost/
 ./tools/portal-nginx-test.sh status
 ```
 
-查看 Portal與 Nginx最近日誌：
-
-```bash
-./tools/portal-nginx-test.sh logs
-```
-
-此指令透過 Compose service名稱合併顯示 Portal與 Nginx最近 160行輸出；若要持續追蹤單一 container，可直接使用 `docker logs -f <container>`。
+## 重新建立 Nginx
 
 設定異常或需要強制重新建立 Dify原有 Nginx時：
 
 ```bash
 ./tools/portal-nginx-test.sh reload-nginx
 ```
-
-## 回復原本 Dify Nginx
-
-```bash
-./tools/portal-nginx-test.sh rollback
-```
-
-回復後 Dify原本的公開入口會再次直接開放，因此只用於中止候選整合測試，不代表仍有 Portal授權保護。Rollback不會刪除 Portal資料、備份、image或 container volume。

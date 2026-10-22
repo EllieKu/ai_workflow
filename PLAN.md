@@ -92,7 +92,7 @@ Portal 不自行簽發額外交接 Token，也不接受瀏覽器自行登記 pas
 - [ ] 驗證 Portal container 重建後 SQLite 資料保留，並實際測試備份還原。
 - [ ] 完成登入嘗試限制、HTTPS、可信任代理、Host／CSRF 設定與正式依賴鎖定。
 - [ ] 正式環境關閉 `DJANGO_DEBUG`，限制後端直連，固定 Dify image 版本，並記錄 image digest。
-- [ ] 實際驗證回滾。目前 `rollback` 會恢復原本 Dify Nginx，也會重新開放原生入口，不是保留 Portal 授權的正式回滾方案。
+- [ ] 規劃並實際驗證保留 Portal 授權保護的正式回滾方案。
 
 若 SQLite 在驗證規模下持續發生寫入競爭、延遲不符門檻，或需要多台主機，再規劃 PostgreSQL 遷移。遷移必須包含備份、資料搬移、切換、回滾與完整性驗證。
 
@@ -143,10 +143,9 @@ cd dify-portal
 ./tools/portal-nginx-test.sh start
 ./tools/portal-nginx-test.sh stop
 ./tools/portal-nginx-test.sh status
-./tools/portal-nginx-test.sh logs
 ```
 
-`start` 會先使用 SQLite online backup 備份 Portal 資料庫，再合併 Dify 原始 Compose 與 Portal override 啟動目前 profile 的服務。`stop` 會停止相同 Compose project 的 container，但不刪除資料或 volumes。完整前置條件、影響範圍、Nginx 重載與回復方式見 `tools/portal-nginx-test.md`。
+`start` 會先使用 SQLite online backup 備份 Portal 資料庫，再合併 Dify 原始 Compose 與 Portal override 啟動目前 profile 的服務。`stop` 會停止相同 Compose project 的 container，但不刪除資料或 volumes。完整前置條件、影響範圍、Nginx 重建方式見 `tools/portal-nginx-test.md`。
 
 目前 Compose override 為配合 `http://localhost/` 將 `DJANGO_DEBUG` 設為 `true`，不可直接用於正式環境。正式交付前必須補齊 HTTPS、正式網域、Secure Cookie、CSRF、防火牆與後端直連限制，並完成第 8 節驗收。
 

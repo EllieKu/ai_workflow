@@ -88,6 +88,6 @@ export DJANGO_DEBUG=true
 
 ## Dify Web App 整合測試
 
-本機整合測試沿用 Dify Compose現有 Nginx，Portal container只執行 Django／Gunicorn。完整服務的啟動、檢查與回滾方式見[整合測試操作文件](../tools/portal-nginx-test.md)。候選設定尚未完成瀏覽器驗收，不能當作正式部署設定。
+本機整合測試沿用 Dify Compose現有 Nginx，Portal container只執行 Django／Gunicorn。完整服務的啟動、檢查與停止方式見[整合測試操作文件](../tools/portal-nginx-test.md)。候選設定尚未完成瀏覽器驗收，不能當作正式部署設定。
 
 Host 白名單統一使用 `DJANGO_ALLOWED_HOSTS`：Compose 會從 `dify-portal/.env` 讀取並以相同名稱傳入容器，Django 再讀取為 `ALLOWED_HOSTS`。既有的 `PORTAL_ALLOWED_HOSTS` 須改名；保留原有白名單值即可。直接執行 Django 時，同樣使用 `DJANGO_ALLOWED_HOSTS` 環境變數，但須自行匯出，不會自動載入 `.env`。

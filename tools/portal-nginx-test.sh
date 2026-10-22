@@ -26,12 +26,10 @@ Daily commands:
   start          Back up Portal SQLite, then build and start Dify with Portal
   stop           Stop Dify and Portal containers without deleting their data
   status         Show Portal and Nginx service status
-  logs           Show the latest Portal and Nginx logs
 
 Maintenance commands:
   check          Validate required files and the merged Compose configuration
   reload-nginx   Recreate Dify Nginx after changing its template
-  rollback       Stop Portal and restore the original Dify Nginx configuration
 EOF
 }
 
@@ -68,13 +66,6 @@ compose_with_portal() {
     (
         cd "$DIFY_DOCKER_DIR"
         docker compose "${COMPOSE_ENV_ARGS[@]}" -f docker-compose.yaml -f "$OVERRIDE_FILE" "$@"
-    )
-}
-
-compose_base() {
-    (
-        cd "$DIFY_DOCKER_DIR"
-        docker compose -f docker-compose.yaml "$@"
     )
 }
 
@@ -121,21 +112,11 @@ case "$command" in
         ensure_auth_secret
         compose_with_portal ps portal nginx
         ;;
-    logs)
-        ensure_auth_secret
-        compose_with_portal logs --tail 160 portal nginx
-        ;;
     reload-nginx)
         ensure_auth_secret
         compose_with_portal config --quiet
         compose_with_portal up -d --no-deps --force-recreate nginx
         compose_with_portal ps nginx
-        ;;
-    rollback)
-        ensure_auth_secret
-        compose_with_portal stop portal
-        compose_base up -d --no-deps --force-recreate nginx
-        compose_base ps nginx
         ;;
     *)
         usage
